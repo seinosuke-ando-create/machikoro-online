@@ -8,6 +8,10 @@ const io = socketIo(server);
 
 app.use(express.static('public'));
 
+/* =============================
+   マスター
+============================= */
+
 const buildingMaster = {
   wheatField: { cost: 1, type: "blue", numbers: [1], amount: 1 },
   ranch: { cost: 1, type: "blue", numbers: [2], amount: 1 },
@@ -22,30 +26,30 @@ const landmarkMaster = {
   shoppingMall: { cost: 6 }
 };
 
-let gameState = {
-  players: [],
-  currentPlayerIndex: 0,
-  phase: "waiting"  // ← 最初は待機
-};
-
-
 /* =============================
-   🔥 建物発動ロジック（サーバー側）
+   🔥 ルーム管理
 ============================= */
-function nextTurn() {
-  gameState.currentPlayerIndex =
-    (gameState.currentPlayerIndex + 1) %
-    gameState.players.length;
 
-  gameState.phase = "roll";
+let rooms = {};
+
+function generateRoomId() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-function activateBuildings(dice) {
+function nextTurn(room) {
+  room.currentPlayerIndex =
+    (room.currentPlayerIndex + 1) %
+    room.players.length;
 
-  const current = gameState.players[gameState.currentPlayerIndex];
+  room.phase = "roll";
+}
 
-  // 🔴 赤（先に処理）
-  gameState.players.forEach(player => {
+function activateBuildings(room, dice) {
+
+  const current = room.players[room.currentPlayerIndex];
+
+  // 🔴 赤
+  room.players.forEach(player => {
     if (player === current) return;
 
     Object.keys(player.buildings).forEach(key => {
@@ -63,7 +67,7 @@ function activateBuildings(dice) {
   });
 
   // 🔵 青 & 🟢 緑
-  gameState.players.forEach(player => {
+  room.players.forEach(player => {
     Object.keys(player.buildings).forEach(key => {
       const count = player.buildings[key];
       const b = buildingMaster[key];
@@ -82,138 +86,147 @@ function activateBuildings(dice) {
   });
 }
 
+/* =============================
+   socket
+============================= */
+
 io.on('connection', (socket) => {
 
-  socket.emit('gameState', gameState);
+  /* 🏠 ルーム作成 */
+  socket.on("createRoom", ({ name, maxPlayers }) => {
 
-  socket.on("joinGame", (playerName) => {
+    const roomId = generateRoomId();
 
-    let gameState = {
+    rooms[roomId] = {
       players: [],
+      maxPlayers,
       currentPlayerIndex: 0,
-      phase: "waiting",
-      maxPlayers: null
+      phase: "waiting"
     };
 
-    socket.on("joinGame", ({ name, playerCount }) => {
+    socket.join(roomId);
 
-      if (!gameState.maxPlayers) {
-        gameState.maxPlayers = playerCount;
-      }
+    socket.emit("roomCreated", roomId);
 
-      gameState.players.push(newPlayer);
+    joinRoom(socket, roomId, name);
+  });
 
-      if (gameState.players.length === gameState.maxPlayers) {
-        gameState.phase = "roll";
-        io.emit("gameStart");
-      }
+  /* 🚪 ルーム参加 */
+  socket.on("joinRoom", ({ roomId, name }) => {
+    joinRoom(socket, roomId, name);
+  });
 
-      io.emit("gameState", gameState);
-    });
+  function joinRoom(socket, roomId, name) {
 
+    const room = rooms[roomId];
+    if (!room) {
+      socket.emit("errorMessage", "ルームが存在しません");
+      return;
+    }
+
+    if (room.players.length >= room.maxPlayers) {
+      socket.emit("errorMessage", "満員です");
+      return;
+    }
 
     const newPlayer = {
-      id: gameState.players.length + 1,
-      name: playerName,
+      id: room.players.length + 1,
+      name,
       socketId: socket.id,
       money: 3,
       buildings: {},
-      landmarks: {}
+      landmarks: {},
+      roomId
     };
 
-    gameState.players.push(newPlayer);
+    room.players.push(newPlayer);
+    socket.join(roomId);
 
-    // 2人揃ったら開始
-    if (gameState.players.length === 2) {
-      gameState.phase = "roll";
+    io.to(roomId).emit("gameState", room);
+
+    if (room.players.length === room.maxPlayers) {
+      room.phase = "roll";
+      io.to(roomId).emit("gameStart");
     }
-
-    io.emit("gameState", gameState);
-  });
+  }
 
   /* 🎲 ダイス */
-  socket.on('rollDice', () => {
-    const current = gameState.players[gameState.currentPlayerIndex];
+  socket.on("rollDice", () => {
 
-    // 🔥 本人チェック
-    if (!current || socket.id !== current.socketId) return;
-    if (gameState.phase !== "roll") return;
+    const playerRoom = getPlayerRoom(socket.id);
+    if (!playerRoom) return;
+
+    const { room } = playerRoom;
+    const current = room.players[room.currentPlayerIndex];
+
+    if (!current || current.socketId !== socket.id) return;
+    if (room.phase !== "roll") return;
 
     const dice = Math.floor(Math.random() * 6) + 1;
 
-    activateBuildings(dice);   // 🔥 サーバーで発動
+    activateBuildings(room, dice);
+    room.phase = "buy";
 
-    gameState.phase = "buy";
-
-    io.emit('diceResult', dice);
-    io.emit('gameState', gameState);
+    io.to(playerRoom.roomId).emit("diceResult", dice);
+    io.to(playerRoom.roomId).emit("gameState", room);
   });
 
   /* 🛒 建物購入 */
-  socket.on('buyBuilding', (key) => {
-    const current = gameState.players[gameState.currentPlayerIndex];
+  socket.on("buyBuilding", (key) => {
 
-    // 🔥 本人チェック
-    if (!current || socket.id !== current.socketId) return;
-    if (gameState.phase !== "buy") return;
+    const playerRoom = getPlayerRoom(socket.id);
+    if (!playerRoom) return;
 
-    const player = gameState.players[gameState.currentPlayerIndex];
+    const { room } = playerRoom;
+    const current = room.players[room.currentPlayerIndex];
+
+    if (!current || current.socketId !== socket.id) return;
+    if (room.phase !== "buy") return;
+
     const b = buildingMaster[key];
     if (!b) return;
 
-    if (player.money >= b.cost) {
+    if (current.money >= b.cost) {
 
-      player.money -= b.cost;
-      player.buildings[key] =
-        (player.buildings[key] || 0) + 1;
+      current.money -= b.cost;
+      current.buildings[key] =
+        (current.buildings[key] || 0) + 1;
 
-      nextTurn(); // 🔥 即ターン終了
-
-      io.emit('gameState', gameState);
+      nextTurn(room);
+      io.to(playerRoom.roomId).emit("gameState", room);
     }
   });
-
-  socket.on('buyLandmark', (key) => {
-    const current = gameState.players[gameState.currentPlayerIndex];
-
-    // 🔥 本人チェック
-    if (!current || socket.id !== current.socketId) return;
-    if (gameState.phase !== "buy") return;
-
-    const player = gameState.players[gameState.currentPlayerIndex];
-    const l = landmarkMaster[key];
-    if (!l) return;
-
-    if (player.money >= l.cost && !player.landmarks[key]) {
-
-      player.money -= l.cost;
-      player.landmarks[key] = true;
-
-      nextTurn(); // 🔥 即ターン終了
-
-      io.emit('gameState', gameState);
-    }
-  });
-
 
   /* 🔁 ターン終了 */
-  socket.on('endTurn', () => {
-    const current = gameState.players[gameState.currentPlayerIndex];
+  socket.on("endTurn", () => {
 
-    // 🔥 本人チェック
-    if (!current || socket.id !== current.socketId) return;
-    if (gameState.phase !== "buy") return;
+    const playerRoom = getPlayerRoom(socket.id);
+    if (!playerRoom) return;
 
-    gameState.currentPlayerIndex =
-      (gameState.currentPlayerIndex + 1) %
-      gameState.players.length;
+    const { room } = playerRoom;
+    const current = room.players[room.currentPlayerIndex];
 
-    gameState.phase = "roll";
+    if (!current || current.socketId !== socket.id) return;
+    if (room.phase !== "buy") return;
 
-    io.emit('gameState', gameState);
+    nextTurn(room);
+    io.to(playerRoom.roomId).emit("gameState", room);
   });
 
+  function getPlayerRoom(socketId) {
+    for (let roomId in rooms) {
+      const room = rooms[roomId];
+      const player = room.players.find(p => p.socketId === socketId);
+      if (player) return { roomId, room };
+    }
+    return null;
+  }
+
 });
+
+/* =============================
+   起動
+============================= */
 
 const PORT = process.env.PORT || 3000;
 
