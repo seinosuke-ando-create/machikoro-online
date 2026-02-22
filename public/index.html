@@ -90,44 +90,52 @@
 </head>
 
 <body>
-  <div id="loginArea">
-    <input id="playerNameInput" placeholder="名前を入力">
-    <button id="joinButton">参加</button>
+  <div id="lobbyScreen">
+    <input type="text" id="playerName" placeholder="あなたの名前を入力" style="font-size:24px; padding:15px; width:300px;" />
+
+    <input type="number" id="playerCount" min="2" max="6" placeholder="人数"
+      style="font-size:20px; padding:10px; width:120px;" />
+
+    <button onclick="joinGame()" style="font-size:24px; padding:15px 40px;">
+      参加する
+    </button>
   </div>
 
-  <h1>街コロ風ゲーム（改良版）</h1>
+  <div id="gameScreen" style="display:none;">
+    <h1>街コロ風ゲーム（改良版）</h1>
 
-  <div class="top-area">
-    <h2>現在のプレイヤー: <span id="currentPlayer">1</span></h2>
-    <h2 id="phaseDisplay">🎲 ダイスフェーズ</h2>
-    <button id="rollButton">ダイスを振る</button>
-    <p>ダイスの目: <span id="diceResult">-</span></p>
-    <div class="money">💰 所持金: <span id="moneyResult">3</span></div>
-  </div>
-
-  <div class="owned-area">
-    <h3>所持建物</h3>
-    <div id="ownedBuildings"></div>
-
-    <h3>ランドマーク</h3>
-    <div id="ownedLandmarks"></div>
-  </div>
-
-  <hr>
-
-  <h2>🛒 建物購入</h2>
-  <div class="card-area" id="buildingCards"></div>
-
-  <!-- ★追加 -->
-  <div class="card-area">
-    <div class="card" id="skipCard" style="background:#999;">
-      <h3>⏭ 何も買わない</h3>
-      <p>ターン終了</p>
+    <div class="top-area">
+      <h2>現在のプレイヤー: <span id="currentPlayer">1</span></h2>
+      <h2 id="phaseDisplay">🎲 ダイスフェーズ</h2>
+      <button id="rollButton">ダイスを振る</button>
+      <p>ダイスの目: <span id="diceResult">-</span></p>
+      <div class="money">💰 所持金: <span id="moneyResult">3</span></div>
     </div>
-  </div>
 
-  <h2>🏰 ランドマーク</h2>
-  <div class="card-area" id="landmarkCards"></div>
+    <div class="owned-area">
+      <h3>所持建物</h3>
+      <div id="ownedBuildings"></div>
+
+      <h3>ランドマーク</h3>
+      <div id="ownedLandmarks"></div>
+    </div>
+
+    <hr>
+
+    <h2>🛒 建物購入</h2>
+    <div class="card-area" id="buildingCards"></div>
+
+    <!-- ★追加 -->
+    <div class="card-area">
+      <div class="card" id="skipCard" style="background:#999;">
+        <h3>⏭ 何も買わない</h3>
+        <p>ターン終了</p>
+      </div>
+    </div>
+
+    <h2>🏰 ランドマーク</h2>
+    <div class="card-area" id="landmarkCards"></div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="game.js"></script>

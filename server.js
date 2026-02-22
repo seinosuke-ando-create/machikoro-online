@@ -88,7 +88,29 @@ io.on('connection', (socket) => {
 
   socket.on("joinGame", (playerName) => {
 
-    if (gameState.players.length >= 2) return;
+    let gameState = {
+      players: [],
+      currentPlayerIndex: 0,
+      phase: "waiting",
+      maxPlayers: null
+    };
+
+    socket.on("joinGame", ({ name, playerCount }) => {
+
+      if (!gameState.maxPlayers) {
+        gameState.maxPlayers = playerCount;
+      }
+
+      gameState.players.push(newPlayer);
+
+      if (gameState.players.length === gameState.maxPlayers) {
+        gameState.phase = "roll";
+        io.emit("gameStart");
+      }
+
+      io.emit("gameState", gameState);
+    });
+
 
     const newPlayer = {
       id: gameState.players.length + 1,

@@ -85,6 +85,11 @@ function createCards() {
 /* ==============================
    発動処理
 ================================= */
+socket.on("gameStart", () => {
+  document.getElementById("lobbyScreen").style.display = "none";
+  document.getElementById("gameScreen").style.display = "block";
+});
+
 socket.on('diceResult', (dice) => {
   document.getElementById("diceResult").textContent = dice;
 });
