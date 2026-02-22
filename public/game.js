@@ -1,0 +1,182 @@
+let gameState = null;
+
+// ===== 建物マスター =====
+const buildingMaster = {
+  wheatField: { name: "🌾 小麦畑", cost: 1, type: "blue", activationNumbers: [1], description: "+1コイン" },
+  ranch: { name: "🐄 牧場", cost: 1, type: "blue", activationNumbers: [2], description: "+1コイン" },
+  forest: { name: "🌲 森", cost: 3, type: "blue", activationNumbers: [5], description: "+3コイン" },
+  bakery: { name: "🥖 パン屋", cost: 1, type: "green", activationNumbers: [2, 3], description: "+1コイン" },
+  convenienceStore: { name: "🏪 コンビニ", cost: 2, type: "green", activationNumbers: [4], description: "+3コイン" },
+  cafe: { name: "☕ カフェ", cost: 2, type: "red", activationNumbers: [3], description: "他プレイヤーから1コイン" }
+};
+
+const landmarkMaster = {
+  station: { name: "🚉 駅", cost: 4 },
+  shoppingMall: { name: "🏬 モール", cost: 6 }
+};
+
+const socket = io();
+
+document.getElementById("joinButton")
+  .addEventListener("click", () => {
+
+    const name = document
+      .getElementById("playerNameInput").value;
+
+    if (!name) return;
+
+    socket.emit("joinGame", name);
+
+    document.getElementById("loginArea")
+      .style.display = "none";
+  });
+
+/* ==============================
+   ✅ 正しい gameState 受信処理
+================================= */
+socket.on('gameState', (state) => {
+  console.log("ゲーム状態を受け取った:", state);
+  gameState = state;      // ← 正しく代入
+  updateDisplay();
+});
+
+socket.on('diceResult', (dice) => {
+  document.getElementById("diceResult").textContent = dice;
+});
+
+/* ==============================
+   初期カード生成
+================================= */
+function createCards() {
+  const buildingArea = document.getElementById("buildingCards");
+  const landmarkArea = document.getElementById("landmarkCards");
+
+  Object.keys(buildingMaster).forEach(key => {
+    const b = buildingMaster[key];
+    const card = document.createElement("div");
+    card.className = `card ${b.type}`;
+    card.id = key + "Card";
+    card.dataset.cost = b.cost;
+    card.innerHTML = `
+      <h3>${b.name}</h3>
+      <p>コスト: ${b.cost}</p>
+      <p>発動: ${b.activationNumbers.join(",")}</p>
+      <p>${b.description}</p>
+    `;
+    card.onclick = () => buyBuilding(key);
+    buildingArea.appendChild(card);
+  });
+
+  Object.keys(landmarkMaster).forEach(key => {
+    const l = landmarkMaster[key];
+    const card = document.createElement("div");
+    card.className = "card landmark";
+    card.dataset.cost = l.cost;
+    card.id = key + "Landmark";
+    card.innerHTML = `
+      <h3>${l.name}</h3>
+      <p>コスト: ${l.cost}</p>
+    `;
+    card.onclick = () => buyLandmark(key);
+    landmarkArea.appendChild(card);
+  });
+}
+
+/* ==============================
+   発動処理
+================================= */
+socket.on('diceResult', (dice) => {
+  document.getElementById("diceResult").textContent = dice;
+});
+
+/* ==============================
+   表示更新（null完全ガード版）
+================================= */
+function updateDisplay() {
+
+  if (!gameState || !gameState.players) return;
+
+  const player = gameState.players[gameState.currentPlayerIndex];
+  if (!player) return;
+
+  document.getElementById("currentPlayer").textContent = player.id;
+  document.getElementById("moneyResult").textContent = player.money;
+  document.getElementById("phaseDisplay").textContent =
+    gameState.phase === "roll" ? "🎲 ダイスフェーズ" : "🛒 購入フェーズ";
+
+  // 所持建物
+  const owned = document.getElementById("ownedBuildings");
+  owned.innerHTML = "";
+  Object.keys(player.buildings || {}).forEach(key => {
+    if (player.buildings[key] > 0) {
+      owned.innerHTML +=
+        `<span class="small-card">${buildingMaster[key].name} ×${player.buildings[key]}</span>`;
+    }
+  });
+
+  // 所持ランドマーク
+  const ownedLandmarks = document.getElementById("ownedLandmarks");
+  ownedLandmarks.innerHTML = "";
+  Object.keys(player.landmarks || {}).forEach(key => {
+    if (player.landmarks[key]) {
+      ownedLandmarks.innerHTML +=
+        `<span class="small-card">${landmarkMaster[key].name}</span>`;
+    }
+  });
+
+  const mySocketId = socket.id;
+  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+  const isMyTurn = currentPlayer &&
+    currentPlayer.socketId === mySocketId;
+
+  // カード有効無効
+  document.querySelectorAll(".card").forEach(card => {
+    const cost = parseInt(card.dataset.cost || 0);
+
+    if (player.money < cost || gameState.phase !== "buy") {
+      card.classList.add("disabled");
+    } else {
+      card.classList.remove("disabled");
+    }
+  });
+
+  document.getElementById("rollButton").disabled =
+    gameState.phase !== "roll";
+  document.getElementById("rollButton").disabled =
+    !isMyTurn || gameState.phase !== "roll";
+
+  document.querySelectorAll(".card").forEach(card => {
+    if (!isMyTurn || gameState.phase !== "buy") {
+      card.classList.add("disabled");
+    }
+  });
+
+}
+
+/* ==============================
+   その他
+================================= */
+function flashCard(key) {
+  const el = document.getElementById(key + "Card");
+  if (!el) return;
+  el.classList.add("highlight");
+  setTimeout(() => el.classList.remove("highlight"), 500);
+}
+
+function skipPurchase() {
+  if (!gameState || gameState.phase !== "buy") return;
+  socket.emit('endTurn');
+}
+
+function buyBuilding(key) { socket.emit('buyBuilding', key); }
+function buyLandmark(key) { socket.emit('buyLandmark', key); }
+function playTurn() { socket.emit('rollDice'); }
+
+/* ==============================
+   初期化
+================================= */
+document.getElementById("rollButton").addEventListener("click", playTurn);
+document.getElementById("skipCard").addEventListener("click", skipPurchase);
+
+createCards();
