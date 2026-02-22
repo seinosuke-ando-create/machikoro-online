@@ -36,8 +36,15 @@
 <!-- 🔹 ロビー -->
 <div id="lobbyScreen" style="display:none;">
   <h2>ルームID: <span id="roomIdDisplay"></span></h2>
+
+  <p id="waitingMessage">
+    ホストによってゲームが開始されるのを待っています。
+  </p>
+
   <h3>参加者</h3>
   <ul id="playerList"></ul>
+
+  <button onclick="leaveRoom()">ルームから退出する</button>
 </div>
 
 <!-- 🔹 ゲーム画面 -->

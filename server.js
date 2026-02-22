@@ -116,6 +116,29 @@ io.on('connection', (socket) => {
     joinRoom(socket, roomId, name);
   });
 
+  socket.on("leaveRoom", () => {
+
+    const playerRoom = getPlayerRoom(socket.id);
+    if (!playerRoom) return;
+
+    const { roomId, room } = playerRoom;
+
+    // プレイヤー削除
+    room.players = room.players.filter(
+      p => p.socketId !== socket.id
+    );
+
+    socket.leave(roomId);
+
+    // 全員に更新通知
+    io.to(roomId).emit("gameState", room);
+
+    // 人がいなくなったらルーム削除
+    if (room.players.length === 0) {
+      delete rooms[roomId];
+    }
+  });
+
   function joinRoom(socket, roomId, name) {
 
     const room = rooms[roomId];
@@ -123,6 +146,10 @@ io.on('connection', (socket) => {
       socket.emit("errorMessage", "ルームが存在しません");
       return;
     }
+
+    // 🔥 すでに参加しているか確認
+    const already = room.players.find(p => p.socketId === socket.id);
+    if (already) return;
 
     if (room.players.length >= room.maxPlayers) {
       socket.emit("errorMessage", "満員です");

@@ -30,15 +30,37 @@ socket.on("roomCreated", (roomId) => {
 ===================== */
 
 function joinRoom() {
+  const btn = event.target;
+  btn.disabled = true;
+
   const name = document.getElementById("joinName").value;
   const roomId = document.getElementById("roomIdInput").value;
 
-  if (!name || !roomId)
+  if (!name || !roomId) {
+    btn.disabled = false;
     return alert("名前とルームIDを入力してください");
+  }
 
   myRoomId = roomId;
+
+  document.getElementById("startScreen").style.display = "none";
+  document.getElementById("lobbyScreen").style.display = "block";
+  document.getElementById("roomIdDisplay").innerText = roomId;
+
   socket.emit("joinRoom", { roomId, name });
 }
+
+function leaveRoom() {
+  socket.emit("leaveRoom");
+
+  myRoomId = null;
+
+  document.getElementById("lobbyScreen").style.display = "none";
+  document.getElementById("gameScreen").style.display = "none";
+  document.getElementById("startScreen").style.display = "block";
+}
+
+
 
 /* =====================
    ゲーム開始
