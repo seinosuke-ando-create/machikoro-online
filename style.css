@@ -1,0 +1,11 @@
+#diceImage {
+  transition: transform 0.3s ease;
+}
+
+.playerCard {
+  border: 2px solid #333;
+  padding: 10px;
+  margin: 10px;
+  border-radius: 10px;
+  background: white;
+}

@@ -90,70 +90,78 @@
 </head>
 
 <body>
-  <div id="roomSelect">
-    <button id="createRoomBtn">新規ルーム作成</button>
-    <button id="joinRoomBtn">既存ルーム参加</button>
-  </div>
+  <div id="menuScreen">
+    <div id="roomSelect">
+      <button id="createRoomBtn">新規ルーム作成</button>
+      <button id="joinRoomBtn">既存ルーム参加</button>
+    </div>
 
-  <div id="createRoomArea" style="display:none;">
-    <input id="createPlayerNameInput" placeholder="あなたの名前">
-    <select id="playerCount">
-      <option value="2">2人</option>
-      <option value="3">3人</option>
-      <option value="4">4人</option>
-    </select>
-    <button id="createBtn">ルーム作成</button>
-  </div>
+    <div id="createRoomArea" style="display:none;">
+      <input id="createPlayerNameInput" placeholder="あなたの名前">
+      <select id="playerCount">
+        <option value="2">2人</option>
+        <option value="3">3人</option>
+        <option value="4">4人</option>
+      </select>
+      <button id="createBtn">ルーム作成</button>
+    </div>
 
-  <div id="joinRoomArea" style="display:none;">
-    <input id="roomIdInput" placeholder="ルームID">
-    <input id="playerNameInput" placeholder="名前">
-    <button id="joinButton">参加</button>
-    <button id="backToMenuBtn">戻る</button>
-  </div>
+    <div id="joinRoomArea" style="display:none;">
+      <input id="roomIdInput" placeholder="ルームID">
+      <input id="playerNameInput" placeholder="名前">
+      <button id="joinButton">参加</button>
+      <button id="backToMenuBtn">戻る</button>
+    </div>
 
-  <div id="waitingRoom" style="display:none;">
-    <h2>ルームID: <span id="displayRoomId"></span></h2>
-    <h3>参加者一覧</h3>
-    <div id="playerList"></div>
-  </div>
-
-  <h1>街コロ風ゲーム（改良版）</h1>
-
-  <div class="top-area">
-    <h2>現在のプレイヤー: <span id="currentPlayer">1</span></h2>
-    <h2 id="phaseDisplay">🎲 ダイスフェーズ</h2>
-    <button id="rollButton">ダイスを振る</button>
-    <p>ダイスの目: <span id="diceResult">-</span></p>
-    <div class="money">💰 所持金: <span id="moneyResult">3</span></div>
-  </div>
-
-  <div class="owned-area">
-    <h3>所持建物</h3>
-    <div id="ownedBuildings"></div>
-
-    <h3>ランドマーク</h3>
-    <div id="ownedLandmarks"></div>
-  </div>
-
-  <hr>
-
-  <h2>🛒 建物購入</h2>
-  <div class="card-area" id="buildingCards"></div>
-
-  <!-- ★追加 -->
-  <div class="card-area">
-    <div class="card" id="skipCard" style="background:#999;">
-      <h3>⏭ 何も買わない</h3>
-      <p>ターン終了</p>
+    <div id="waitingRoom" style="display:none;">
+      <h2>ルームID: <span id="displayRoomId"></span></h2>
+      <h3>参加者一覧</h3>
+      <div id="playerList"></div>
     </div>
   </div>
 
-  <h2>🏰 ランドマーク</h2>
-  <div class="card-area" id="landmarkCards"></div>
+  <div id="gameScreen" style="display:none;">
+    <h1>街コロ</h1>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="game.js"></script>
+    <div class="top-area">
+      <h2>現在のプレイヤー: <span id="currentPlayer">1</span></h2>
+      <h2 id="phaseDisplay">🎲 ダイスフェーズ</h2>
+      <button id="rollButton">ダイスを振る</button>
+      <p>ダイスの目:</p>
+      <img id="diceImage" src="" width="100">
+      <div class="money">💰 所持金: <span id="moneyResult">3</span></div>
+    </div>
+
+    <h2>👥 プレイヤー状況</h2>
+    <div id="allPlayersInfo"></div>
+    
+    <div class="owned-area">
+      <h3>所持建物</h3>
+      <div id="ownedBuildings"></div>
+
+      <h3>ランドマーク</h3>
+      <div id="ownedLandmarks"></div>
+    </div>
+
+    <hr>
+
+    <h2>🛒 建物購入</h2>
+    <div class="card-area" id="buildingCards"></div>
+
+    <!-- ★追加 -->
+    <div class="card-area">
+      <div class="card" id="skipCard" style="background:#999;">
+        <h3>⏭ 何も買わない</h3>
+        <p>ターン終了</p>
+      </div>
+    </div>
+
+    <h2>🏰 ランドマーク</h2>
+    <div class="card-area" id="landmarkCards"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+  </div>
 
 </body>
 

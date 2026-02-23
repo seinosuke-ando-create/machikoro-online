@@ -67,16 +67,16 @@ document.getElementById("createBtn").onclick = () => {
    ✅ 正しい room 受信処理
 ================================= */
 socket.on('room', (state) => {
+
   room = state;
 
-  const list = document.getElementById("playerList");
-  list.innerHTML = "";
-  state.players.forEach(p => {
-    list.innerHTML += `<div>${p.name}</div>`;
-  });
-
-  if (state.phase !== "waiting") {
+  if (room.phase === "waiting") {
+    document.getElementById("menuScreen").style.display = "none";
+    document.getElementById("waitingRoom").style.display = "block";
+  } else {
+    document.getElementById("menuScreen").style.display = "none";
     document.getElementById("waitingRoom").style.display = "none";
+    document.getElementById("gameScreen").style.display = "block";
   }
 
   updateDisplay();
@@ -94,7 +94,9 @@ socket.on("roomCreated", (roomId) => {
 
 
 socket.on('diceResult', (dice) => {
-  document.getElementById("diceResult").textContent = dice;
+  const img = document.getElementById("diceImage");
+  img.src = "images/dice" + dice + ".png";
+  img.style.transform = "rotate(360deg)";
 });
 
 socket.on("gameOver", ({ winner }) => {
@@ -204,6 +206,34 @@ function updateDisplay() {
       card.classList.add("disabled");
     }
   });
+  const allArea = document.getElementById("allPlayersInfo");
+  allArea.innerHTML = "";
+
+  room.players.forEach(p => {
+
+    let buildings = "";
+    Object.keys(p.buildings).forEach(key => {
+      if (p.buildings[key] > 0) {
+        buildings += buildingMaster[key].name + "×" + p.buildings[key] + " ";
+      }
+    });
+
+    let landmarks = "";
+    Object.keys(p.landmarks).forEach(key => {
+      if (p.landmarks[key]) {
+        landmarks += landmarkMaster[key].name + " ";
+      }
+    });
+
+    allArea.innerHTML += `
+    <div class="playerCard">
+      <h3>${p.name}</h3>
+      💰 ${p.money}<br>
+      🏠 ${buildings || "なし"}<br>
+      🏰 ${landmarks || "なし"}
+    </div>
+  `;
+  });
 
 }
 
@@ -222,9 +252,9 @@ function skipPurchase() {
   socket.emit('endTurn', { roomId: currentRoomId });
 }
 
-function buyBuilding(key) { socket.emit('buyBuilding', { key, roomId: currentRoomId });}
-function buyLandmark(key) { socket.emit('buyLandmark', { key, roomId: currentRoomId });}
-function playTurn() {socket.emit('rollDice', { roomId: currentRoomId });}
+function buyBuilding(key) { socket.emit('buyBuilding', { key, roomId: currentRoomId }); }
+function buyLandmark(key) { socket.emit('buyLandmark', { key, roomId: currentRoomId }); }
+function playTurn() { socket.emit('rollDice', { roomId: currentRoomId }); }
 
 /* ==============================
    初期化
