@@ -54,7 +54,12 @@ document.getElementById("backToMenuBtn").onclick = () => {
 
 document.getElementById("createBtn").onclick = () => {
   const count = document.getElementById("playerCount").value;
-  socket.emit("createRoom", count);
+  const name = document.getElementById("createPlayerNameInput").value;
+
+  socket.emit("createRoom", {
+    maxPlayers: count,
+    playerName: name
+  });
 };
 
 /* ==============================
@@ -132,10 +137,6 @@ function createCards() {
 /* ==============================
    発動処理
 ================================= */
-socket.on('diceResult', (dice) => {
-  document.getElementById("diceResult").textContent = dice;
-});
-
 /* ==============================
    表示更新（null完全ガード版）
 ================================= */

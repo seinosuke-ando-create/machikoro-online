@@ -105,19 +105,34 @@ io.on('connection', (socket) => {
     io.to(roomId).emit("room", room);
   });
 
-  socket.on("createRoom", (maxPlayers) => {
+  socket.on("createRoom", ({ maxPlayers, playerName }) => {
+
     const roomId = Math.random().toString(36).substring(2, 8);
 
-    rooms[roomId] = {
+    const newRoom = {
       players: [],
       currentPlayerIndex: 0,
       phase: "waiting",
       maxPlayers: parseInt(maxPlayers)
     };
 
+    const newPlayer = {
+      id: 1,
+      name: playerName,
+      socketId: socket.id,
+      money: 3,
+      buildings: {},
+      landmarks: {}
+    };
+
+    newRoom.players.push(newPlayer);
+
+    rooms[roomId] = newRoom;
+
     socket.join(roomId);
 
     socket.emit("roomCreated", roomId);
+    io.to(roomId).emit("room", newRoom);
   });
 
   /* 🎲 ダイス */
@@ -135,7 +150,7 @@ io.on('connection', (socket) => {
     room.phase = "buy";
 
     io.to(roomId).emit('diceResult', dice);
-    io.to(roomId).emit('gameState', room);
+    io.to(roomId).emit('room', room);
   });
 
   /* 🛒 建物購入 */
@@ -157,13 +172,15 @@ io.on('connection', (socket) => {
       player.buildings[key] =
         (player.buildings[key] || 0) + 1;
 
-      nextTurn(); // 🔥 即ターン終了
+      nextTurn(room); // 🔥 即ターン終了
 
-      io.emit('room', room);
+      io.to(roomId).emit("room", room);
     }
   });
 
   socket.on('buyLandmark', (key) => {
+    const room = rooms[roomId];
+    if (!room) return;
     const current = room.players[room.currentPlayerIndex];
 
     // 🔥 本人チェック
@@ -181,13 +198,15 @@ io.on('connection', (socket) => {
 
       nextTurn(); // 🔥 即ターン終了
 
-      io.emit('room', room);
+      io.to(roomId).emit("room", room);
     }
   });
 
 
   /* 🔁 ターン終了 */
   socket.on('endTurn', () => {
+    const room = rooms[roomId];
+    if (!room) return;
     const current = room.players[room.currentPlayerIndex];
 
     // 🔥 本人チェック
@@ -200,7 +219,7 @@ io.on('connection', (socket) => {
 
     room.phase = "roll";
 
-    io.emit('room', room);
+    io.to(roomId).emit("room", room);
   });
 
 });
