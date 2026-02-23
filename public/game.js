@@ -13,7 +13,8 @@ const buildingMaster = {
 
 const landmarkMaster = {
   station: { name: "🚉 駅", cost: 4 },
-  shoppingMall: { name: "🏬 モール", cost: 6 }
+  shoppingMall: { name: "🏬 モール", cost: 6 },
+  themePark: { name: "🎡 テーマパーク", cost: 10 }
 };
 
 const socket = io();
@@ -94,6 +95,10 @@ socket.on("roomCreated", (roomId) => {
 
 socket.on('diceResult', (dice) => {
   document.getElementById("diceResult").textContent = dice;
+});
+
+socket.on("gameOver", ({ winner }) => {
+  alert("🏆 勝者は " + winner + " さん！");
 });
 
 /* ==============================

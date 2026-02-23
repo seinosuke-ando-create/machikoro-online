@@ -21,7 +21,8 @@ let rooms = {};
 
 const landmarkMaster = {
   station: { cost: 4 },
-  shoppingMall: { cost: 6 }
+  shoppingMall: { cost: 6 },
+  themePark: { cost: 10 }
 };
 
 
@@ -196,7 +197,19 @@ io.on('connection', (socket) => {
       player.money -= l.cost;
       player.landmarks[key] = true;
 
-      nextTurn(); // 🔥 即ターン終了
+      // 🔥 勝利判定
+      const allBuilt = Object.keys(landmarkMaster).every(lm =>
+        player.landmarks[lm]
+      );
+
+      if (allBuilt) {
+        io.to(roomId).emit("gameOver", {
+          winner: player.name
+        });
+        return;
+      }
+
+      nextTurn(room);
 
       io.to(roomId).emit("room", room);
     }
