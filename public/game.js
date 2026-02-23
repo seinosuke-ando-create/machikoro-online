@@ -71,11 +71,19 @@ socket.on('room', (state) => {
   room = state;
 
   if (room.phase === "waiting") {
-    document.getElementById("menuScreen").style.display = "none";
+
+    // menuは表示したまま
+    document.getElementById("menuScreen").style.display = "block";
     document.getElementById("waitingRoom").style.display = "block";
+
+    document.getElementById("roomSelect").style.display = "none";
+    document.getElementById("createRoomArea").style.display = "none";
+    document.getElementById("joinRoomArea").style.display = "none";
+
   } else {
+
+    // ゲーム開始時のみメニューを消す
     document.getElementById("menuScreen").style.display = "none";
-    document.getElementById("waitingRoom").style.display = "none";
     document.getElementById("gameScreen").style.display = "block";
   }
 

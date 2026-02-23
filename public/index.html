@@ -105,18 +105,19 @@
       </select>
       <button id="createBtn">ルーム作成</button>
     </div>
+    <div id="waitingRoom" style="display:none;">
+      <h2>ルームID: <span id="displayRoomId"></span></h2>
+      <h3>参加者一覧</h3>
+      <div id="playerList"></div>
+    </div>
+  </div>
 
+  <div id="waitingScreen">
     <div id="joinRoomArea" style="display:none;">
       <input id="roomIdInput" placeholder="ルームID">
       <input id="playerNameInput" placeholder="名前">
       <button id="joinButton">参加</button>
       <button id="backToMenuBtn">戻る</button>
-    </div>
-
-    <div id="waitingRoom" style="display:none;">
-      <h2>ルームID: <span id="displayRoomId"></span></h2>
-      <h3>参加者一覧</h3>
-      <div id="playerList"></div>
     </div>
   </div>
 
@@ -134,7 +135,7 @@
 
     <h2>👥 プレイヤー状況</h2>
     <div id="allPlayersInfo"></div>
-    
+
     <div class="owned-area">
       <h3>所持建物</h3>
       <div id="ownedBuildings"></div>
