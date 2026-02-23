@@ -41,6 +41,17 @@ document.getElementById("createRoomBtn").onclick = () => {
   document.getElementById("createRoomArea").style.display = "block";
 };
 
+document.getElementById("joinRoomBtn").onclick = () => {
+  document.getElementById("roomSelect").style.display = "none";
+  document.getElementById("createRoomArea").style.display = "none";
+  document.getElementById("joinRoomArea").style.display = "block";
+};
+
+document.getElementById("backToMenuBtn").onclick = () => {
+  document.getElementById("roomSelect").style.display = "block";
+  document.getElementById("joinRoomArea").style.display = "none";
+};
+
 document.getElementById("createBtn").onclick = () => {
   const count = document.getElementById("playerCount").value;
   socket.emit("createRoom", count);
