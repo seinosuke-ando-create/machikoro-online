@@ -90,9 +90,30 @@
 </head>
 
 <body>
-  <div id="loginArea">
-    <input id="playerNameInput" placeholder="名前を入力">
+  <div id="roomSelect">
+    <button id="createRoomBtn">新規ルーム作成</button>
+    <button id="joinRoomBtn">既存ルーム参加</button>
+  </div>
+
+  <div id="createRoomArea" style="display:none;">
+    <select id="playerCount">
+      <option value="2">2人</option>
+      <option value="3">3人</option>
+      <option value="4">4人</option>
+    </select>
+    <button id="createBtn">ルーム作成</button>
+  </div>
+
+  <div id="joinRoomArea" style="display:none;">
+    <input id="roomIdInput" placeholder="ルームID">
+    <input id="playerNameInput" placeholder="名前">
     <button id="joinButton">参加</button>
+  </div>
+
+  <div id="waitingRoom" style="display:none;">
+    <h2>ルームID: <span id="displayRoomId"></span></h2>
+    <h3>参加者一覧</h3>
+    <div id="playerList"></div>
   </div>
 
   <h1>街コロ風ゲーム（改良版）</h1>

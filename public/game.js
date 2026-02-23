@@ -1,4 +1,5 @@
 let gameState = null;
+let currentRoomId = null;
 
 // ===== 建物マスター =====
 const buildingMaster = {
@@ -17,28 +18,63 @@ const landmarkMaster = {
 
 const socket = io();
 
-document.getElementById("joinButton")
-  .addEventListener("click", () => {
+document.getElementById("joinButton").onclick = () => {
+  const name = document.getElementById("playerNameInput").value;
+  const roomId = document.getElementById("roomIdInput").value;
 
-    const name = document
-      .getElementById("playerNameInput").value;
+  currentRoomId = roomId;
 
-    if (!name) return;
-
-    socket.emit("joinGame", name);
-
-    document.getElementById("loginArea")
-      .style.display = "none";
+  socket.emit("joinGame", {
+    playerName: name,
+    roomId: roomId
   });
+
+  document.getElementById("roomSelect").style.display = "none";
+  document.getElementById("joinRoomArea").style.display = "none";
+  document.getElementById("waitingRoom").style.display = "block";
+
+  document.getElementById("displayRoomId").textContent = roomId;
+};
+
+
+document.getElementById("createRoomBtn").onclick = () => {
+  document.getElementById("createRoomArea").style.display = "block";
+};
+
+document.getElementById("createBtn").onclick = () => {
+  const count = document.getElementById("playerCount").value;
+  socket.emit("createRoom", count);
+};
 
 /* ==============================
    ✅ 正しい gameState 受信処理
 ================================= */
 socket.on('gameState', (state) => {
-  console.log("ゲーム状態を受け取った:", state);
-  gameState = state;      // ← 正しく代入
+  gameState = state;
+
+  const list = document.getElementById("playerList");
+  list.innerHTML = "";
+  state.players.forEach(p => {
+    list.innerHTML += `<div>${p.name}</div>`;
+  });
+
+  if (state.phase !== "waiting") {
+    document.getElementById("waitingRoom").style.display = "none";
+  }
+
   updateDisplay();
 });
+
+socket.on("roomCreated", (roomId) => {
+  currentRoomId = roomId;
+
+  document.getElementById("roomSelect").style.display = "none";
+  document.getElementById("createRoomArea").style.display = "none";
+  document.getElementById("waitingRoom").style.display = "block";
+
+  document.getElementById("displayRoomId").textContent = roomId;
+});
+
 
 socket.on('diceResult', (dice) => {
   document.getElementById("diceResult").textContent = dice;
@@ -166,12 +202,12 @@ function flashCard(key) {
 
 function skipPurchase() {
   if (!gameState || gameState.phase !== "buy") return;
-  socket.emit('endTurn');
+  socket.emit('endTurn', { roomId: currentRoomId });
 }
 
-function buyBuilding(key) { socket.emit('buyBuilding', key); }
-function buyLandmark(key) { socket.emit('buyLandmark', key); }
-function playTurn() { socket.emit('rollDice'); }
+function buyBuilding(key) { socket.emit('buyBuilding', { key, roomId: currentRoomId });}
+function buyLandmark(key) { socket.emit('buyLandmark', { key, roomId: currentRoomId });}
+function playTurn() {socket.emit('rollDice', { roomId: currentRoomId });}
 
 /* ==============================
    初期化
