@@ -79,8 +79,6 @@ function activateBuildings(room, dice) {
 
 io.on('connection', (socket) => {
 
-  socket.emit('room', room);
-
   socket.on("joinGame", ({ playerName, roomId }) => {
 
     const room = rooms[roomId];
@@ -123,21 +121,21 @@ io.on('connection', (socket) => {
   });
 
   /* 🎲 ダイス */
-  socket.on('rollDice', () => {
-    const current = room.players[room.currentPlayerIndex];
+  socket.on('rollDice', ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room) return;
 
-    // 🔥 本人チェック
+    const current = room.players[room.currentPlayerIndex];
     if (!current || socket.id !== current.socketId) return;
     if (room.phase !== "roll") return;
 
     const dice = Math.floor(Math.random() * 6) + 1;
 
-    activateBuildings(dice);   // 🔥 サーバーで発動
-
+    activateBuildings(room, dice);  // ← 修正
     room.phase = "buy";
 
-    io.emit('diceResult', dice);
-    io.emit('room', room);
+    io.to(roomId).emit('diceResult', dice);
+    io.to(roomId).emit('gameState', room);
   });
 
   /* 🛒 建物購入 */

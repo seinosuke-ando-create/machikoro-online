@@ -1,4 +1,4 @@
-let gameState = null;
+let room = null;
 let currentRoomId = null;
 
 // ===== 建物マスター =====
@@ -47,10 +47,10 @@ document.getElementById("createBtn").onclick = () => {
 };
 
 /* ==============================
-   ✅ 正しい gameState 受信処理
+   ✅ 正しい room 受信処理
 ================================= */
-socket.on('gameState', (state) => {
-  gameState = state;
+socket.on('room', (state) => {
+  room = state;
 
   const list = document.getElementById("playerList");
   list.innerHTML = "";
@@ -130,15 +130,15 @@ socket.on('diceResult', (dice) => {
 ================================= */
 function updateDisplay() {
 
-  if (!gameState || !gameState.players) return;
+  if (!room || !room.players) return;
 
-  const player = gameState.players[gameState.currentPlayerIndex];
+  const player = room.players[room.currentPlayerIndex];
   if (!player) return;
 
   document.getElementById("currentPlayer").textContent = player.id;
   document.getElementById("moneyResult").textContent = player.money;
   document.getElementById("phaseDisplay").textContent =
-    gameState.phase === "roll" ? "🎲 ダイスフェーズ" : "🛒 購入フェーズ";
+    room.phase === "roll" ? "🎲 ダイスフェーズ" : "🛒 購入フェーズ";
 
   // 所持建物
   const owned = document.getElementById("ownedBuildings");
@@ -161,7 +161,7 @@ function updateDisplay() {
   });
 
   const mySocketId = socket.id;
-  const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+  const currentPlayer = room.players[room.currentPlayerIndex];
 
   const isMyTurn = currentPlayer &&
     currentPlayer.socketId === mySocketId;
@@ -170,7 +170,7 @@ function updateDisplay() {
   document.querySelectorAll(".card").forEach(card => {
     const cost = parseInt(card.dataset.cost || 0);
 
-    if (player.money < cost || gameState.phase !== "buy") {
+    if (player.money < cost || room.phase !== "buy") {
       card.classList.add("disabled");
     } else {
       card.classList.remove("disabled");
@@ -178,12 +178,12 @@ function updateDisplay() {
   });
 
   document.getElementById("rollButton").disabled =
-    gameState.phase !== "roll";
+    room.phase !== "roll";
   document.getElementById("rollButton").disabled =
-    !isMyTurn || gameState.phase !== "roll";
+    !isMyTurn || room.phase !== "roll";
 
   document.querySelectorAll(".card").forEach(card => {
-    if (!isMyTurn || gameState.phase !== "buy") {
+    if (!isMyTurn || room.phase !== "buy") {
       card.classList.add("disabled");
     }
   });
@@ -201,7 +201,7 @@ function flashCard(key) {
 }
 
 function skipPurchase() {
-  if (!gameState || gameState.phase !== "buy") return;
+  if (!room || room.phase !== "buy") return;
   socket.emit('endTurn', { roomId: currentRoomId });
 }
 
