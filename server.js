@@ -179,7 +179,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('buyLandmark', (key) => {
+  socket.on('buyLandmark', ({ key, roomId }) => {
     const room = rooms[roomId];
     if (!room) return;
     const current = room.players[room.currentPlayerIndex];
@@ -217,7 +217,7 @@ io.on('connection', (socket) => {
 
 
   /* 🔁 ターン終了 */
-  socket.on('endTurn', () => {
+  socket.on('endTurn', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room) return;
     const current = room.players[room.currentPlayerIndex];
